@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Notes — A home for your important notes</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📓</text></svg>">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Inter:wght@400;500;600&display=swap');
+
+:root {
+  --bg: #FBF8F1;
+  --ink: #2B2620;
+  --ink-soft: #5C5548;
+  --ink-faint: #877E6F;
+  --line: #E6DFD2;
+  --line-input: #E2DACA;
+  --card: #FFFFFF;
+  --accent: #C06A3E;
+  --accent-deep: #B4552F;
+  --accent-pale: #F5E5DA;
+  --serif: 'Cormorant Garamond', 'EB Garamond', Georgia, serif;
+  --sans: 'Inter', system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--bg);
+  font-family: var(--sans);
+  color: var(--ink);
+  padding: 0 clamp(18px, 5vw, 72px) 90px;
+}
+
+/* ---------- hero ---------- */
+.hero { padding: 44px 0 8px; border-bottom: 1px solid #EAE3D6; margin-bottom: 26px; }
+.hero-top { display: flex; justify-content: space-between; align-items: center; gap: 18px; flex-wrap: wrap; }
+.hero-title-row { display: flex; align-items: center; gap: 14px; }
+.logo-mark {
+  width: 46px; height: 46px; border-radius: 12px; background: var(--accent-pale); color: var(--accent-deep);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+h1.hero-title { font-family: var(--serif); font-weight: 600; font-size: clamp(28px, 4vw, 40px); letter-spacing: -0.01em; margin: 0; line-height: 1.1; }
+.hero-sub { font-family: var(--serif); font-style: italic; font-size: 19px; color: #8A8172; max-width: 560px; line-height: 1.55; margin: 18px 0 30px; }
+
+.stat-row { display: flex; gap: 16px; flex-wrap: wrap; padding-bottom: 34px; }
+.stat-card { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 20px 26px; min-width: 150px; display: flex; flex-direction: column; gap: 8px; }
+.stat-card.accent { border-color: #DCA893; }
+.stat-value { font-family: var(--serif); font-size: 34px; font-weight: 500; line-height: 1; }
+.stat-card.accent .stat-value { color: var(--accent-deep); }
+.stat-label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.18em; font-weight: 500; color: var(--ink-faint); }
+.stat-card.accent .stat-label { color: var(--accent-deep); }
+
+/* ---------- buttons ---------- */
+.btn { display: inline-flex; align-items: center; gap: 8px; border-radius: 999px; font-family: var(--sans); font-weight: 600; cursor: pointer; font-size: 14.5px; border: none; }
+.btn-primary { background: var(--accent); color: #FDF9F3; padding: 12px 22px; box-shadow: 0 4px 12px rgba(192,106,62,0.28); }
+.btn-primary:hover { background: var(--accent-deep); }
+.btn-primary:disabled { opacity: .45; cursor: not-allowed; }
+.btn-ghost { background: transparent; border: 1px solid var(--line-input); color: var(--ink-soft); padding: 10px 18px; font-size: 14px; }
+.btn-ghost:hover { background: #F1EBDF; }
+.btn-danger { background: #C0563A; color: #fff; padding: 10px 18px; font-size: 14px; }
+.btn-small { background: transparent; border: 1px solid var(--line-input); color: var(--ink-soft); padding: 10px 16px; font-size: 13.5px; border-radius: 10px; }
+.btn-small:hover { background: #F1EBDF; }
+
+/* ---------- toolbar ---------- */
+.toolbar { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; margin-bottom: 30px; }
+.search-box { flex: 1 1 280px; display: flex; align-items: center; gap: 10px; background: var(--card); border: 1px solid var(--line-input); border-radius: 999px; padding: 13px 20px; }
+.search-box:focus-within, select:focus, input:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(192,106,62,0.14); outline: none; }
+.search-box input { flex: 1; border: none; outline: none; box-shadow: none !important; font-size: 15px; font-family: var(--sans); background: transparent; color: var(--ink); }
+.search-box .clear { border: none; background: transparent; cursor: pointer; color: var(--ink-faint); display: none; padding: 2px; }
+select.sort { border: 1px solid var(--line-input); border-radius: 10px; background: var(--card); color: var(--ink); padding: 13px 16px; font-size: 14.5px; font-family: var(--sans); cursor: pointer; }
+
+/* ---------- grid & cards ---------- */
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; }
+.card {
+  background: var(--card); border-radius: 10px; padding: 20px 20px 15px; cursor: pointer;
+  border: 1px solid var(--line); display: flex; flex-direction: column; gap: 11px;
+  transition: transform .15s, box-shadow .15s;
+}
+.card:hover { transform: translateY(-2px); box-shadow: 0 10px 26px rgba(43,38,32,0.10); }
+.card h3 { font-family: var(--serif); font-size: 21px; font-weight: 600; margin: 0; line-height: 1.25; }
+.card .snippet {
+  margin: 0; font-size: 13.5px; color: var(--ink-soft); line-height: 1.6;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+}
+.tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-size: 11.5px; font-weight: 600; color: #8A6416; background: #F5EDDA; border-radius: 999px; padding: 3px 11px; }
+
+.fresh-wrap { display: flex; align-items: center; gap: 10px; }
+.fresh-track { flex: 1; height: 4px; background: #EFE9DC; border-radius: 99px; overflow: hidden; }
+.fresh-fill { height: 100%; border-radius: 99px; transition: width .3s; }
+.fresh-label { font-size: 10.5px; font-weight: 700; border-radius: 999px; padding: 3px 10px; white-space: nowrap; letter-spacing: 0.04em; text-transform: uppercase; }
+
+.card-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 2px; }
+.card-meta { font-size: 12px; color: var(--ink-faint); display: flex; align-items: center; gap: 4px; }
+.revise-btn {
+  display: flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 600;
+  color: var(--accent-deep); background: transparent; border: 1px solid #E4C4AF; border-radius: 999px;
+  padding: 6px 13px; cursor: pointer; font-family: var(--sans); transition: all .15s;
+}
+.revise-btn:hover { background: var(--accent-pale); }
+
+/* ---------- empty state ---------- */
+.empty-shell {
+  border: 1.5px dashed #DCD3C1; border-radius: 12px; max-width: 640px; margin: 40px auto;
+  padding: 64px 32px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.empty-icon { width: 70px; height: 70px; border-radius: 50%; background: var(--accent-pale); color: var(--accent-deep); display: flex; align-items: center; justify-content: center; }
+.empty-shell h2 { font-family: var(--serif); font-size: 30px; font-weight: 600; margin: 4px 0 0; }
+.empty-shell p { margin: 0; font-size: 15px; color: #6E6558; line-height: 1.65; }
+
+/* ---------- modal ---------- */
+.overlay {
+  position: fixed; inset: 0; background: rgba(43,38,32,0.42); backdrop-filter: blur(3px);
+  display: none; align-items: center; justify-content: center; padding: 18px; z-index: 50;
+}
+.overlay.open { display: flex; }
+.sheet {
+  background: #FDFBF6; border-radius: 14px; width: 100%; max-width: 640px; padding: 24px 26px;
+  max-height: 88vh; overflow-y: auto; display: flex; flex-direction: column; gap: 14px;
+  box-shadow: 0 24px 60px rgba(43,38,32,0.35); border: 1px solid #EAE3D6;
+  animation: pop .18s ease-out;
+}
+.sheet.wide { max-width: 760px; }
+@keyframes pop { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .sheet { animation: none; } .card:hover { transform: none; } }
+.sheet-head { display: flex; justify-content: space-between; align-items: flex-start; }
+.sheet-head h2 { font-family: var(--serif); font-size: 26px; font-weight: 600; margin: 0; line-height: 1.2; padding-right: 12px; }
+.icon-btn { border: none; background: #F1EBDF; border-radius: 9px; width: 32px; height: 32px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink-soft); }
+.sheet input[type=text] { border: 1px solid var(--line-input); border-radius: 10px; padding: 12px 15px; font-size: 14.5px; font-family: var(--sans); background: #fff; color: var(--ink); width: 100%; }
+.sheet-foot { display: flex; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 4px; flex-wrap: wrap; }
+.reader-meta { font-size: 12.5px; color: var(--ink-faint); margin: 0; }
+.reader-body {
+  font-size: 14.5px; line-height: 1.75; color: #3A342B;
+  background: #F7F3E9; border: 1px solid #EAE3D6; border-radius: 10px; padding: 18px 20px;
+  overflow-wrap: break-word;
+}
+
+/* ---------- rich editor ---------- */
+.editor-wrap { border: 1px solid var(--line-input); border-radius: 10px; background: #fff; overflow: hidden; }
+.editor-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(192,106,62,0.14); }
+.editor-toolbar { display: flex; align-items: center; flex-wrap: wrap; gap: 2px; padding: 7px 9px; border-bottom: 1px solid #EFE9DC; background: var(--bg); }
+.tb-btn { border: none; background: transparent; border-radius: 7px; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--ink-soft); }
+.tb-btn:hover { background: #F1E7D8; color: var(--accent-deep); }
+.tb-divider { width: 1px; height: 18px; background: var(--line-input); margin: 0 6px; }
+.editor-scroll { position: relative; }
+.editor {
+  min-height: 220px; max-height: 380px; overflow-y: auto; padding: 13px 16px;
+  font-size: 14px; font-family: var(--sans); line-height: 1.65; color: var(--ink); outline: none;
+}
+.editor-placeholder { position: absolute; top: 13px; left: 16px; right: 16px; color: #A79D8C; font-size: 14px; pointer-events: none; line-height: 1.65; }
+
+/* rich content, in editor and reader */
+.editor h1, .editor h2, .editor h3, .reader-body h1, .reader-body h2, .reader-body h3 {
+  font-family: var(--serif); font-weight: 600; font-size: 20px; line-height: 1.3; margin: 12px 0 6px; color: var(--ink);
+}
+.editor blockquote, .reader-body blockquote { border-left: 3px solid var(--accent); margin: 10px 0; padding: 4px 14px; color: #6E6558; font-style: italic; }
+.editor pre, .reader-body pre {
+  background: #2B2620; color: #F3EDE0; border-radius: 8px; padding: 12px 15px;
+  font-family: 'SFMono-Regular', Consolas, 'Courier New', monospace; font-size: 13px;
+  line-height: 1.55; white-space: pre-wrap; word-break: break-word; margin: 10px 0;
+}
+.editor ul, .editor ol, .reader-body ul, .reader-body ol { padding-left: 24px; margin: 8px 0; }
+.editor li, .reader-body li { margin: 3px 0; }
+.editor a, .reader-body a { color: var(--accent-deep); }
+.editor p, .reader-body p { margin: 6px 0; }
+
+/* ---------- cloud modal text ---------- */
+.sync-hint { font-size: 13.5px; color: var(--ink-soft); line-height: 1.65; margin: 0; }
+.sync-status { font-size: 12.5px; color: var(--ink-faint); margin: 0; min-height: 16px; }
+.sync-fineprint { font-size: 12px; color: var(--ink-faint); line-height: 1.6; margin: 0; }
+
+/* ---------- cloud sync ---------- */
+.cloud-dot { width: 8px; height: 8px; border-radius: 50%; background: #C9C2B4; display: inline-block; }
+.cloud-dot.synced { background: #7C8A5A; }
+.cloud-dot.syncing { background: #C9973B; animation: pulse 1s infinite; }
+.cloud-dot.error, .cloud-dot.offline { background: #C0563A; }
+@keyframes pulse { 50% { opacity: .35; } }
+.cloud-steps { margin: 0; padding-left: 20px; font-size: 13.5px; color: var(--ink-soft); line-height: 1.8; }
+.cloud-steps a { color: var(--accent-deep); font-weight: 600; }
+.cloud-status-panel { border: 1px solid var(--line); border-radius: 10px; background: #fff; padding: 16px; display: flex; flex-direction: column; gap: 10px; font-size: 13.5px; color: var(--ink-soft); }
+.cloud-status-line { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--ink); }
+.token-input { width: 100%; border: 1px solid var(--line-input); border-radius: 10px; padding: 12px 15px; font-size: 13.5px; font-family: 'SFMono-Regular', Consolas, monospace; }
+
+/* ---------- toast ---------- */
+.toast {
+  position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(20px);
+  background: var(--ink); color: var(--bg); border-radius: 999px; padding: 10px 24px;
+  font-size: 13.5px; font-weight: 600; box-shadow: 0 10px 26px rgba(43,38,32,0.35); z-index: 100;
+  opacity: 0; transition: opacity .2s, transform .2s; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+svg { flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="hero-top">
+    <div class="hero-title-row">
+      <div class="logo-mark" id="i-notebook"></div>
+      <h1 class="hero-title">A home for your important notes</h1>
+    </div>
+    <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-small" id="btn-cloud" title="Keep notes synced across all your devices via your private GitHub gist"><span class="cloud-dot" id="cloud-dot"></span><span id="i-cloud"></span> Cloud</button>
+      <button class="btn btn-small" id="btn-export" title="Download all notes as a JSON backup file"><span id="i-download"></span> Export</button>
+      <button class="btn btn-small" id="btn-import" title="Restore notes from a JSON backup file"><span id="i-upload"></span> Import</button>
+      <input type="file" id="import-file" accept="application/json" style="display:none">
+      <button class="btn btn-primary" id="btn-new"><span id="i-plus"></span> New note</button>
+    </div>
+  </div>
+  <p class="hero-sub">Paste a concept the moment it lands. Come back to it, refine it, and let the ideas keep their shape over time.</p>
+  <div class="stat-row">
+    <div class="stat-card"><span class="stat-value" id="stat-total">0</span><span class="stat-label">Total</span></div>
+    <div class="stat-card"><span class="stat-value" id="stat-revised">0</span><span class="stat-label">Revised</span></div>
+    <div class="stat-card accent"><span class="stat-value" id="stat-due">0</span><span class="stat-label">Need review</span></div>
+  </div>
+</header>
+
+<div class="toolbar">
+  <div class="search-box">
+    <span id="i-search" style="opacity:.4; display:flex;"></span>
+    <input id="search" type="text" placeholder="Search titles, content, tags...">
+    <button class="clear" id="search-clear" aria-label="Clear search"><span id="i-x1"></span></button>
+  </div>
+  <select class="sort" id="sort">
+    <option value="recent">Recently added</option>
+    <option value="due">Needs revision first</option>
+    <option value="title">Title A–Z</option>
+  </select>
+</div>
+
+<div id="content"></div>
+
+<!-- composer modal -->
+<div class="overlay" id="composer-overlay">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2 id="composer-title">New note</h2>
+      <button class="icon-btn" id="composer-close"><span id="i-x2"></span></button>
+    </div>
+    <input type="text" id="f-title" placeholder="What's the concept? e.g. Event loop in JavaScript">
+    <div class="editor-wrap">
+      <div class="editor-toolbar" id="editor-toolbar"></div>
+      <div class="editor-scroll">
+        <div class="editor-placeholder" id="editor-placeholder">Paste or write everything you want to remember about it…</div>
+        <div class="editor" id="editor" contenteditable="true"></div>
+      </div>
+    </div>
+    <input type="text" id="f-tags" placeholder="Tags, comma separated (optional) — e.g. javascript, async">
+    <div class="sheet-foot">
+      <button class="btn btn-ghost" id="composer-cancel">Cancel</button>
+      <button class="btn btn-primary" id="composer-save">Save note</button>
+    </div>
+  </div>
+</div>
+
+<!-- reader modal -->
+<div class="overlay" id="reader-overlay">
+  <div class="sheet wide" id="reader-sheet"></div>
+</div>
+
+<!-- cloud sync modal -->
+<div class="overlay" id="cloud-overlay">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2>Cloud sync</h2>
+      <button class="icon-btn" id="cloud-close"><span id="i-x4"></span></button>
+    </div>
+    <div id="cloud-body"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ============================== icons ============================== */
+const ICONS = {
+  plus: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 12h14M12 5v14"/></svg>',
+  search: '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
+  x: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  pencil: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>',
+  trash: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>',
+  check: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>',
+  notebook: '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4M2 10h4M2 14h4M2 18h4"/><path d="M21.4 2.6a2.17 2.17 0 0 1 0 3L14 13l-4 1 1-4 7.4-7.4a2.17 2.17 0 0 1 3 0Z"/></svg>',
+  clock: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>',
+  download: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/><path d="M12 15V3"/></svg>',
+  upload: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m17 8-5-5-5 5"/><path d="M12 3v12"/></svg>',
+  bold: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1h7a4 4 0 0 1 0 8"/></svg>',
+  italic: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="19" x2="10" y1="4" y2="4"/><line x1="14" x2="5" y1="20" y2="20"/><line x1="15" x2="9" y1="4" y2="20"/></svg>',
+  underline: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 4v6a6 6 0 0 0 12 0V4"/><line x1="4" x2="20" y1="20" y2="20"/></svg>',
+  strike: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M16 4H9a3 3 0 0 0-2.83 4"/><path d="M14 12a4 4 0 0 1 0 8H6"/><line x1="4" x2="20" y1="12" y2="12"/></svg>',
+  heading: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 12h8M4 18V6M12 18V6"/><path d="M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1"/></svg>',
+  quote: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/><path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1v1a2 2 0 0 1-2 2 1 1 0 0 0-1 1v2a1 1 0 0 0 1 1 6 6 0 0 0 6-6V5a2 2 0 0 0-2-2z"/></svg>',
+  code: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg>',
+  list: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></svg>',
+  listOrdered: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" x2="21" y1="6" y2="6"/><line x1="10" x2="21" y1="12" y2="12"/><line x1="10" x2="21" y1="18" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></svg>',
+  highlight: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 11-6 6v3h9l3-3"/><path d="m22 12-4.6 4.6a2 2 0 0 1-2.8 0l-5.2-5.2a2 2 0 0 1 0-2.8L14 4"/></svg>',
+  clearFmt: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M5 20h6"/><path d="M13 4 8 20"/><path d="m15 15 5 5"/><path d="m20 15-5 5"/></svg>',
+  undo: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>',
+  redo: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5 5.5 5.5 0 0 0 9.5 20H13"/></svg>',
+  cloud: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>',
+};
+
+/* place static icons */
+const put = (id, name) => { const el = document.getElementById(id); if (el) el.innerHTML = ICONS[name]; };
+put("i-notebook", "notebook"); put("i-plus", "plus"); put("i-search", "search");
+put("i-x1", "x"); put("i-x2", "x"); put("i-x4", "x"); put("i-download", "download"); put("i-upload", "upload");
+put("i-cloud", "cloud");
+
+/* ============================== data ============================== */
+const STORAGE_KEY = "recall-notes-v1";
+const INTERVALS = [1, 3, 7, 14, 30, 60, 90];
+const DAY = 24 * 60 * 60 * 1000;
+
+let notes = [];
+try {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) notes = JSON.parse(raw);
+} catch (e) { console.error("Could not load notes", e); }
+
+/* forget deletion markers older than 60 days */
+notes = notes.filter(n => !(n.deleted && Date.now() - (n.updatedAt || 0) > 60 * 24 * 60 * 60 * 1000));
+
+const liveNotes = () => notes.filter(n => !n.deleted);
+
+/* merge another device's notes into ours: newest version of each note wins */
+function mergeNotes(incoming) {
+  let added = 0, updated = 0;
+  (incoming || []).forEach(inc => {
+    if (!inc || !inc.id) return;
+    const ex = notes.find(n => n.id === inc.id);
+    if (ex) {
+      if ((inc.updatedAt || 0) > (ex.updatedAt || 0)) { Object.assign(ex, inc); updated++; }
+    } else {
+      notes.push(inc);
+      if (!inc.deleted) added++;
+    }
+  });
+  persist(); render();
+  return { added, updated };
+}
+
+function persist() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(notes)); }
+  catch (e) {
+    console.error("Could not save notes", e);
+    showToast("Couldn't save — storage may be full. Export a backup!");
+  }
+  scheduleCloudPush(); /* no-op until cloud sync is set up */
+}
+
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const intervalFor = (revs) => INTERVALS[Math.min(revs || 0, INTERVALS.length - 1)];
+
+function noteStatus(note) {
+  const last = note.lastRevised || note.createdAt;
+  const ratio = ((Date.now() - last) / DAY) / intervalFor(note.revisions);
+  if (ratio >= 1) return { key: "due", ratio: 1 };
+  if (ratio >= 0.5) return { key: "fading", ratio };
+  return { key: "fresh", ratio };
+}
+
+const STATUS_META = {
+  fresh:  { label: "Fresh",       bar: "#7C8A5A", chip: "#EFF1E4", text: "#5A6540" },
+  fading: { label: "Fading",      bar: "#C9973B", chip: "#F7EDD8", text: "#8A6416" },
+  due:    { label: "Need review", bar: "#C0563A", chip: "#F8E5DD", text: "#A03E25" },
+};
+
+function timeAgo(ts) {
+  const d = Math.floor((Date.now() - ts) / DAY);
+  if (d <= 0) return "today";
+  if (d === 1) return "yesterday";
+  if (d < 30) return d + " days ago";
+  const m = Math.floor(d / 30);
+  return m === 1 ? "a month ago" : m + " months ago";
+}
+
+/* html helpers */
+const looksLikeHtml = (s) => /<[a-z][\s\S]*>/i.test(s || "");
+const escapeHtml = (s) => (s || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+const toHtml = (c) => looksLikeHtml(c) ? c : escapeHtml(c).replace(/\n/g, "<br>");
+function stripHtml(html) {
+  if (!looksLikeHtml(html)) return html || "";
+  const d = document.createElement("div");
+  d.innerHTML = html || "";
+  return d.textContent || "";
+}
+
+/* ============================== render ============================== */
+const $ = (id) => document.getElementById(id);
+let query = "", sortBy = "recent", editingId = null, openId = null;
+
+function freshBarHtml(note) {
+  const st = noteStatus(note);
+  const meta = STATUS_META[st.key];
+  return '<div class="fresh-wrap" title="Next revision due after ' + intervalFor(note.revisions) + ' days">' +
+    '<div class="fresh-track"><div class="fresh-fill" style="width:' + (Math.min(st.ratio, 1) * 100) + '%;background:' + meta.bar + '"></div></div>' +
+    '<span class="fresh-label" style="background:' + meta.chip + ';color:' + meta.text + '">' + meta.label + '</span></div>';
+}
+
+function tagsHtml(tags, extraStyle) {
+  if (!tags) return "";
+  const chips = tags.split(",").map(t => t.trim()).filter(Boolean)
+    .map(t => '<span class="tag">' + escapeHtml(t) + '</span>').join("");
+  return chips ? '<div class="tag-row"' + (extraStyle ? ' style="' + extraStyle + '"' : '') + '>' + chips + '</div>' : "";
+}
+
+function render() {
+  const live = liveNotes();
+  $("stat-total").textContent = live.length;
+  $("stat-revised").textContent = live.filter(n => (n.revisions || 0) > 0).length;
+  $("stat-due").textContent = live.filter(n => noteStatus(n).key === "due").length;
+  $("search-clear").style.display = query ? "flex" : "none";
+
+  const content = $("content");
+  const q = query.trim().toLowerCase();
+  let list = live.filter(n => !q ||
+    n.title.toLowerCase().includes(q) ||
+    stripHtml(n.content).toLowerCase().includes(q) ||
+    (n.tags || "").toLowerCase().includes(q)
+  );
+  list = list.slice();
+  if (sortBy === "recent") list.sort((a, b) => b.createdAt - a.createdAt);
+  else if (sortBy === "due") list.sort((a, b) => noteStatus(b).ratio - noteStatus(a).ratio);
+  else list.sort((a, b) => a.title.localeCompare(b.title));
+
+  if (live.length === 0) {
+    content.innerHTML =
+      '<div class="empty-shell"><div class="empty-icon">' + ICONS.notebook + '</div>' +
+      '<h2>Your notebook is empty</h2>' +
+      '<p>The next great idea lands as a note. Paste it, tag it,<br>and come back to revise.</p>' +
+      '<button class="btn btn-primary" onclick="openComposer()">' + ICONS.plus + ' Write your first note</button></div>';
+    return;
+  }
+  if (list.length === 0) {
+    content.innerHTML = '<div class="empty-shell"><p>No notes match — try a different search.</p></div>';
+    return;
+  }
+
+  content.innerHTML = '<div class="grid">' + list.map(n =>
+    '<article class="card" onclick="openReader(\'' + n.id + '\')">' +
+      '<h3>' + escapeHtml(n.title) + '</h3>' +
+      '<p class="snippet">' + escapeHtml(stripHtml(n.content)) + '</p>' +
+      tagsHtml(n.tags) +
+      freshBarHtml(n) +
+      '<div class="card-foot">' +
+        '<span class="card-meta">' + ICONS.clock + ' revised ' + timeAgo(n.lastRevised || n.createdAt) +
+          ((n.revisions || 0) > 0 ? " · ×" + n.revisions : "") + '</span>' +
+        '<button class="revise-btn" onclick="event.stopPropagation();markRevised(\'' + n.id + '\')">' + ICONS.check + ' Revised</button>' +
+      '</div>' +
+    '</article>'
+  ).join("") + '</div>';
+}
+
+/* ============================== actions ============================== */
+let toastTimer = null;
+function showToast(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
+}
+
+function markRevised(id) {
+  const n = notes.find(x => x.id === id);
+  if (!n) return;
+  n.lastRevised = Date.now();
+  n.revisions = (n.revisions || 0) + 1;
+  n.updatedAt = Date.now();
+  persist(); render();
+  if (openId === id) openReader(id);
+  showToast("Revision logged");
+}
+
+function deleteNote(id) {
+  const n = notes.find(x => x.id === id);
+  if (n) { n.deleted = true; n.updatedAt = Date.now(); n.content = ""; n.tags = ""; }
+  persist(); closeReader(); render();
+  showToast("Note deleted");
+}
+
+/* ============================== composer + editor ============================== */
+const editor = $("editor");
+const placeholderEl = $("editor-placeholder");
+
+const TOOLS = [
+  ["bold", "Bold (Ctrl+B)", () => exec("bold")],
+  ["italic", "Italic (Ctrl+I)", () => exec("italic")],
+  ["underline", "Underline (Ctrl+U)", () => exec("underline")],
+  ["strike", "Strikethrough", () => exec("strikeThrough")],
+  "|",
+  ["heading", "Heading", () => exec("formatBlock", "<h3>")],
+  ["quote", "Quote", () => exec("formatBlock", "<blockquote>")],
+  ["code", "Code block", () => exec("formatBlock", "<pre>")],
+  "|",
+  ["list", "Bullet list", () => exec("insertUnorderedList")],
+  ["listOrdered", "Numbered list", () => exec("insertOrderedList")],
+  ["highlight", "Highlight", () => exec("hiliteColor", "#F9E9A9")],
+  "|",
+  ["undo", "Undo", () => exec("undo")],
+  ["redo", "Redo", () => exec("redo")],
+  ["clearFmt", "Clear formatting", () => { exec("removeFormat"); exec("formatBlock", "<div>"); }],
+];
+
+const tb = $("editor-toolbar");
+TOOLS.forEach(t => {
+  if (t === "|") {
+    const d = document.createElement("span");
+    d.className = "tb-divider";
+    tb.appendChild(d);
+  } else {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "tb-btn";
+    b.title = t[1];
+    b.innerHTML = ICONS[t[0]];
+    b.addEventListener("mousedown", (e) => { e.preventDefault(); t[2](); });
+    tb.appendChild(b);
+  }
+});
+
+function exec(cmd, arg) {
+  editor.focus();
+  document.execCommand(cmd, false, arg || null);
+  syncEditorState();
+}
+
+function syncEditorState() {
+  const html = editor.innerHTML;
+  const empty = !stripHtml(html).trim() && !/<(img|li|pre)/i.test(html);
+  placeholderEl.style.display = empty ? "block" : "none";
+  const canSave = $("f-title").value.trim() && stripHtml(html).trim();
+  $("composer-save").disabled = !canSave;
+}
+editor.addEventListener("input", syncEditorState);
+$("f-title").addEventListener("input", syncEditorState);
+
+function openComposer(note) {
+  editingId = note ? note.id : null;
+  $("composer-title").textContent = note ? "Edit note" : "New note";
+  $("composer-save").textContent = note ? "Save changes" : "Save note";
+  $("f-title").value = note ? note.title : "";
+  $("f-tags").value = note ? (note.tags || "") : "";
+  editor.innerHTML = note ? toHtml(note.content) : "";
+  syncEditorState();
+  $("composer-overlay").classList.add("open");
+  setTimeout(() => $("f-title").focus(), 50);
+}
+function closeComposer() { $("composer-overlay").classList.remove("open"); }
+
+$("composer-save").addEventListener("click", () => {
+  const title = $("f-title").value.trim();
+  const content = editor.innerHTML;
+  const tags = $("f-tags").value.trim();
+  if (!title || !stripHtml(content).trim()) return;
+  if (editingId) {
+    const n = notes.find(x => x.id === editingId);
+    if (n) Object.assign(n, { title, content, tags, updatedAt: Date.now() });
+    showToast("Note updated");
+  } else {
+    const now = Date.now();
+    notes.unshift({ id: uid(), title, content, tags, createdAt: now, lastRevised: now, updatedAt: now, revisions: 0 });
+    showToast("Note saved");
+  }
+  persist(); closeComposer(); render();
+});
+
+$("btn-new").addEventListener("click", () => openComposer());
+$("composer-close").addEventListener("click", closeComposer);
+$("composer-cancel").addEventListener("click", closeComposer);
+$("composer-overlay").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeComposer(); });
+
+/* ============================== reader ============================== */
+function openReader(id) {
+  const n = notes.find(x => x.id === id);
+  if (!n) return;
+  openId = id;
+  const revs = n.revisions || 0;
+  $("reader-sheet").innerHTML =
+    '<div class="sheet-head"><h2>' + escapeHtml(n.title) + '</h2>' +
+    '<button class="icon-btn" onclick="closeReader()">' + ICONS.x + '</button></div>' +
+    freshBarHtml(n) +
+    '<p class="reader-meta">Added ' + timeAgo(n.createdAt) + ' · last revised ' + timeAgo(n.lastRevised || n.createdAt) +
+      ' · ' + revs + ' revision' + (revs === 1 ? "" : "s") + '</p>' +
+    '<div class="reader-body">' + toHtml(n.content) + '</div>' +
+    tagsHtml(n.tags, "margin-top:4px") +
+    '<div class="sheet-foot" id="reader-actions">' +
+      '<button class="btn btn-ghost" style="color:#A03E25;margin-right:auto" onclick="confirmDelete(\'' + n.id + '\')">' + ICONS.trash + ' Delete</button>' +
+      '<button class="btn btn-ghost" onclick="editFromReader(\'' + n.id + '\')">' + ICONS.pencil + ' Edit</button>' +
+      '<button class="btn btn-primary" onclick="markRevised(\'' + n.id + '\');closeReader()">' + ICONS.check + ' Mark revised</button>' +
+    '</div>';
+  $("reader-overlay").classList.add("open");
+}
+function closeReader() { openId = null; $("reader-overlay").classList.remove("open"); }
+function editFromReader(id) {
+  const n = notes.find(x => x.id === id);
+  closeReader();
+  if (n) openComposer(n);
+}
+function confirmDelete(id) {
+  $("reader-actions").innerHTML =
+    '<span style="font-size:13.5px;color:#A03E25;margin-right:auto">Delete this note permanently?</span>' +
+    '<button class="btn btn-ghost" onclick="openReader(\'' + id + '\')">Keep it</button>' +
+    '<button class="btn btn-danger" onclick="deleteNote(\'' + id + '\')">' + ICONS.trash + ' Delete</button>';
+}
+$("reader-overlay").addEventListener("click", (e) => { if (e.target === e.currentTarget) closeReader(); });
+
+/* ============================== search / sort ============================== */
+$("search").addEventListener("input", (e) => { query = e.target.value; render(); });
+$("search-clear").addEventListener("click", () => { query = ""; $("search").value = ""; render(); });
+$("sort").addEventListener("change", (e) => { sortBy = e.target.value; render(); });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") { closeComposer(); closeReader(); }
+});
+
+/* ============================== export / import ============================== */
+$("btn-export").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify({ app: "recall-notes", exportedAt: new Date().toISOString(), notes }, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "my-notes-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast("Backup downloaded");
+});
+
+$("btn-import").addEventListener("click", () => $("import-file").click());
+$("import-file").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      const incoming = Array.isArray(data) ? data : data.notes;
+      if (!Array.isArray(incoming)) throw new Error("Not a valid backup file");
+      const cleaned = incoming.filter(n => n && n.title !== undefined).map(n => ({
+        revisions: 0, createdAt: Date.now(), lastRevised: Date.now(), updatedAt: 0, ...n, id: n.id || uid(),
+      }));
+      const res = mergeNotes(cleaned);
+      showToast("Imported: " + res.added + " added, " + res.updated + " updated");
+    } catch (err) {
+      showToast("Import failed — that doesn't look like a notes backup");
+    }
+    e.target.value = "";
+  };
+  reader.readAsText(file);
+});
+
+/* ============================== cloud sync (GitHub Gist) ============================== */
+const GH_TOKEN_KEY = "recall-gh-token";
+const GH_GIST_KEY = "recall-gh-gist";
+const GIST_DESC = "recall-notes-sync — data for My Notes app (do not delete)";
+const TOKEN_LINK = "https://github.com/settings/tokens/new?scopes=gist&description=My+Notes+Sync";
+
+let ghToken = localStorage.getItem(GH_TOKEN_KEY) || "";
+let ghGist = localStorage.getItem(GH_GIST_KEY) || "";
+let cloudState = ghToken ? "idle" : "off";
+let cloudDirty = false;
+let cloudPushTimer = null;
+
+function setCloudState(state, detail) {
+  cloudState = state;
+  const dot = $("cloud-dot");
+  dot.className = "cloud-dot" +
+    (state === "synced" ? " synced" : state === "syncing" ? " syncing" :
+     state === "error" ? " error" : state === "offline" ? " offline" : "");
+  const el = $("cloud-status-detail");
+  if (el) el.textContent = detail || cloudStateText();
+}
+
+function cloudStateText() {
+  return cloudState === "synced" ? "All notes synced ✓" :
+    cloudState === "syncing" ? "Syncing…" :
+    cloudState === "offline" ? "Offline — changes will sync when you're back online." :
+    cloudState === "error" ? "Sync problem — check your internet, or reconnect with a new token." :
+    "Not synced yet.";
+}
+
+async function gh(path, opts = {}) {
+  const r = await fetch("https://api.github.com" + path, {
+    ...opts,
+    headers: {
+      "Authorization": "Bearer " + ghToken,
+      "Accept": "application/vnd.github+json",
+      "Content-Type": "application/json",
+      ...(opts.headers || {}),
+    },
+  });
+  if (!r.ok) { const err = new Error("GitHub API " + r.status); err.status = r.status; throw err; }
+  return r.json();
+}
+
+async function findOrCreateGist() {
+  const list = await gh("/gists?per_page=100");
+  const found = list.find(g => g.description === GIST_DESC && g.files && g.files["notes.json"]);
+  if (found) return found.id;
+  const made = await gh("/gists", {
+    method: "POST",
+    body: JSON.stringify({
+      description: GIST_DESC,
+      public: false,
+      files: { "notes.json": { content: JSON.stringify({ app: "recall-notes", notes: [] }) } },
+    }),
+  });
+  return made.id;
+}
+
+async function pullCloud() {
+  const g = await gh("/gists/" + ghGist);
+  const f = g.files && g.files["notes.json"];
+  if (!f) return [];
+  let text = f.content;
+  if (f.truncated) { const r = await fetch(f.raw_url); text = await r.text(); }
+  try {
+    const data = JSON.parse(text || "{}");
+    return Array.isArray(data) ? data : (data.notes || []);
+  } catch (e) { return []; }
+}
+
+async function pushCloud() {
+  await gh("/gists/" + ghGist, {
+    method: "PATCH",
+    body: JSON.stringify({
+      files: { "notes.json": { content: JSON.stringify({ app: "recall-notes", updated: new Date().toISOString(), notes }) } },
+    }),
+  });
+}
+
+function scheduleCloudPush() {
+  if (!ghToken) return;
+  if (!ghGist) { cloudSyncNow(false); return; } /* link the gist first, then it pushes */
+  cloudDirty = true;
+  clearTimeout(cloudPushTimer);
+  cloudPushTimer = setTimeout(doCloudPush, 1500);
+}
+
+async function doCloudPush() {
+  if (!cloudDirty || !ghToken || !ghGist) return;
+  try {
+    setCloudState("syncing");
+    await pushCloud();
+    cloudDirty = false;
+    setCloudState("synced");
+  } catch (e) {
+    setCloudState(navigator.onLine ? "error" : "offline");
+  }
+}
+
+async function cloudSyncNow(showResult) {
+  if (!ghToken) return;
+  try {
+    setCloudState("syncing");
+    if (!ghGist) { /* token present (e.g. hardcoded) but gist not linked yet — link it now */
+      ghGist = await findOrCreateGist();
+      localStorage.setItem(GH_GIST_KEY, ghGist);
+    }
+    const remote = await pullCloud();
+    const res = mergeNotes(remote); /* schedules a push of the merged set via persist() */
+    await doCloudPush();
+    cloudDirty = false;
+    setCloudState("synced");
+    if (showResult) showToast("Cloud synced ✓  " + res.added + " added, " + res.updated + " updated");
+  } catch (e) {
+    setCloudState(navigator.onLine ? "error" : "offline");
+    if (showResult) showToast(e.status === 401 ? "Token rejected — generate a new one and reconnect" : "Cloud sync failed — check internet");
+  }
+}
+
+async function cloudConnect() {
+  const token = $("token-field").value.trim();
+  if (!token) { $("cloud-status-detail").textContent = "Paste your token first."; return; }
+  ghToken = token;
+  $("cloud-connect-btn").disabled = true;
+  $("cloud-status-detail").textContent = "Connecting to GitHub…";
+  try {
+    ghGist = await findOrCreateGist();
+    localStorage.setItem(GH_TOKEN_KEY, ghToken);
+    localStorage.setItem(GH_GIST_KEY, ghGist);
+    await cloudSyncNow(true);
+    renderCloudModal();
+  } catch (e) {
+    ghToken = ""; ghGist = "";
+    $("cloud-connect-btn").disabled = false;
+    $("cloud-status-detail").textContent = e.status === 401
+      ? "GitHub rejected that token. Make sure you copied the whole thing (starts with ghp_ or github_pat_)."
+      : "Couldn't reach GitHub — check your internet and try again.";
+  }
+}
+
+function cloudDisconnect() {
+  ghToken = ""; ghGist = ""; cloudDirty = false;
+  localStorage.removeItem(GH_TOKEN_KEY);
+  localStorage.removeItem(GH_GIST_KEY);
+  setCloudState("off");
+  renderCloudModal();
+  showToast("Cloud sync turned off — notes stay on this device");
+}
+
+function renderCloudModal() {
+  const body = $("cloud-body");
+  if (!ghToken) {
+    body.innerHTML =
+      '<p class="sync-hint">Your notes get saved to a <b>private gist</b> on your own free GitHub account — so they\'re waiting for you on any device, any time. One-time setup, about 5 minutes:</p>' +
+      '<ol class="cloud-steps">' +
+        '<li>Create a free account at <a href="https://github.com/signup" target="_blank" rel="noopener">github.com/signup</a> (skip if you have one).</li>' +
+        '<li>Open <a href="' + TOKEN_LINK + '" target="_blank" rel="noopener">this link</a> — it pre-fills a token that can <b>only</b> touch gists. Set expiration to "No expiration", scroll down, click <b>Generate token</b>.</li>' +
+        '<li>Copy the token and paste it below.</li>' +
+      '</ol>' +
+      '<input type="password" class="token-field token-input" id="token-field" placeholder="Paste token here (ghp_… or github_pat_…)">' +
+      '<p class="sync-status" id="cloud-status-detail"></p>' +
+      '<div class="sheet-foot"><button class="btn btn-primary" id="cloud-connect-btn">Connect &amp; sync</button></div>' +
+      '<p class="sync-fineprint">On your other devices: open this same file, tap Cloud, paste the <b>same token</b> — your notes are found automatically. The token is kept only in this browser and can\'t access anything on GitHub except gists.</p>';
+    $("cloud-connect-btn").addEventListener("click", cloudConnect);
+    $("token-field").addEventListener("keydown", (e) => { if (e.key === "Enter") cloudConnect(); });
+  } else {
+    body.innerHTML =
+      '<div class="cloud-status-panel">' +
+        '<div class="cloud-status-line">' + ICONS.cloud + ' Cloud sync is on</div>' +
+        '<span id="cloud-status-detail">' + cloudStateText() + '</span>' +
+        '<span style="font-size:12px; color:var(--ink-faint)">Notes save automatically a moment after every change, and the latest version is pulled each time you open the app.</span>' +
+      '</div>' +
+      '<div class="sheet-foot">' +
+        '<button class="btn btn-ghost" style="margin-right:auto" id="cloud-disconnect-btn">Disconnect</button>' +
+        '<button class="btn btn-primary" id="cloud-syncnow-btn">Sync now</button>' +
+      '</div>' +
+      '<p class="sync-fineprint">Your data lives in a private gist on your GitHub account — you own it. You can see the raw file any time at gist.github.com.</p>';
+    $("cloud-disconnect-btn").addEventListener("click", cloudDisconnect);
+    $("cloud-syncnow-btn").addEventListener("click", () => cloudSyncNow(true));
+  }
+}
+
+const cloudOverlay = $("cloud-overlay");
+$("btn-cloud").addEventListener("click", () => { renderCloudModal(); cloudOverlay.classList.add("open"); });
+$("cloud-close").addEventListener("click", () => cloudOverlay.classList.remove("open"));
+cloudOverlay.addEventListener("click", (e) => { if (e.target === e.currentTarget) cloudOverlay.classList.remove("open"); });
+
+window.addEventListener("online", () => { if (ghToken && ghGist) (cloudDirty ? doCloudPush() : cloudSyncNow(false)); });
+
+/* ============================== go ============================== */
+render();
+if (ghToken) cloudSyncNow(false); /* pull the latest from the cloud on open (links the gist on first run) */
+</script>
+</body>
+</html>

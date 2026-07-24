@@ -202,6 +202,36 @@ select.sort { border: 1px solid var(--line-input); border-radius: 10px; backgrou
 .spinner { width: 16px; height: 16px; border: 2.5px solid rgba(255,255,255,0.35); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ---------- review mode ---------- */
+.due-badge { background: #fff; color: #4A5A3A; border-radius: 999px; font-size: 11.5px; font-weight: 700; padding: 1px 8px; line-height: 17px; }
+.rv-progress { display: flex; align-items: center; gap: 12px; }
+.rv-progress-track { flex: 1; height: 5px; background: #EFE9DC; border-radius: 99px; overflow: hidden; }
+.rv-progress-fill { height: 100%; background: #4A5A3A; border-radius: 99px; transition: width .25s; }
+.rv-progress-label { font-size: 12.5px; color: var(--ink-faint); font-weight: 600; white-space: nowrap; }
+.rv-card { border: 1px solid var(--line); border-radius: 12px; background: #fff; padding: 28px 26px; display: flex; flex-direction: column; gap: 14px; min-height: 180px; }
+.rv-title { font-family: var(--serif); font-size: 27px; font-weight: 600; margin: 0; line-height: 1.25; }
+.rv-instruction { font-family: var(--serif); font-style: italic; font-size: 15.5px; color: #8A8172; margin: 0; }
+.rv-content { display: none; font-size: 14.5px; line-height: 1.75; color: #3A342B; background: #F7F3E9; border: 1px solid #EAE3D6; border-radius: 10px; padding: 4px 18px; overflow-wrap: break-word; }
+.rv-content.open { display: block; }
+.rv-content h1, .rv-content h2, .rv-content h3 { font-family: var(--serif); font-weight: 600; font-size: 19px; margin: 12px 0 6px; }
+.rv-content blockquote { border-left: 3px solid var(--accent); margin: 10px 0; padding: 4px 14px; color: #6E6558; font-style: italic; }
+.rv-content pre { background: #2B2620; color: #F3EDE0; border-radius: 8px; padding: 12px 15px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 13px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+.rv-content ul, .rv-content ol { padding-left: 24px; }
+.rv-grades { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+@media (max-width: 560px) { .rv-grades { grid-template-columns: repeat(2, 1fr); } }
+.rv-grade { border: none; border-radius: 11px; padding: 12px 8px; cursor: pointer; font-family: var(--sans); display: flex; flex-direction: column; align-items: center; gap: 3px; color: #fff; transition: transform .1s, filter .15s; }
+.rv-grade:hover { filter: brightness(1.07); transform: translateY(-1px); }
+.rv-grade .g-label { font-size: 14px; font-weight: 700; }
+.rv-grade .g-sub { font-size: 11px; opacity: .85; }
+.rv-grade.forgot { background: #C0563A; }
+.rv-grade.hard { background: #C9973B; }
+.rv-grade.good { background: #6B7D4C; }
+.rv-grade.easy { background: #3E7A6A; }
+.rv-done { text-align: center; padding: 34px 20px; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.rv-done h3 { font-family: var(--serif); font-size: 27px; font-weight: 600; margin: 0; }
+.rv-done p { margin: 0; font-size: 14.5px; color: var(--ink-soft); line-height: 1.6; }
+.rv-keyhint { font-size: 11.5px; color: #A79D8C; text-align: center; margin: 0; }
+
 /* ---------- toast ---------- */
 .toast {
   position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -223,6 +253,7 @@ svg { flex-shrink: 0; }
       <h1 class="hero-title">A home for your important notes</h1>
     </div>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-primary" id="btn-review" style="background:#4A5A3A; box-shadow:0 4px 12px rgba(74,90,58,0.28);"><span id="i-brain"></span> Review <span class="due-badge" id="review-badge" style="display:none">0</span></button>
       <button class="btn btn-small" id="btn-ai" title="Generate senior frontend interview questions with AI"><span id="i-sparkles"></span> AI Practice</button>
       <button class="btn btn-small" id="btn-cloud" title="Keep notes synced across all your devices via your private GitHub gist"><span class="cloud-dot" id="cloud-dot"></span><span id="i-cloud"></span> Cloud</button>
       <button class="btn btn-small" id="btn-export" title="Download all notes as a JSON backup file"><span id="i-download"></span> Export</button>
@@ -304,6 +335,11 @@ svg { flex-shrink: 0; }
   </div>
 </div>
 
+<!-- review mode modal -->
+<div class="overlay" id="review-overlay">
+  <div class="sheet wide" id="review-sheet"></div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -336,13 +372,14 @@ const ICONS = {
   redo: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5 5.5 5.5 0 0 0 9.5 20H13"/></svg>',
   cloud: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>',
   sparkles: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>',
+  brain: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M12 5v13"/></svg>',
 };
 
 /* place static icons */
 const put = (id, name) => { const el = document.getElementById(id); if (el) el.innerHTML = ICONS[name]; };
 put("i-notebook", "notebook"); put("i-plus", "plus"); put("i-search", "search");
 put("i-x1", "x"); put("i-x2", "x"); put("i-x4", "x"); put("i-x5", "x"); put("i-download", "download"); put("i-upload", "upload");
-put("i-cloud", "cloud"); put("i-sparkles", "sparkles");
+put("i-cloud", "cloud"); put("i-sparkles", "sparkles"); put("i-brain", "brain");
 
 /* ============================== data ============================== */
 const STORAGE_KEY = "recall-notes-v1";
@@ -445,8 +482,12 @@ function tagsHtml(tags, extraStyle) {
 function render() {
   const live = liveNotes();
   $("stat-total").textContent = live.length;
-  $("stat-revised").textContent = live.filter(n => (n.revisions || 0) > 0).length;
-  $("stat-due").textContent = live.filter(n => noteStatus(n).key === "due").length;
+  $("stat-revised").textContent = live.filter(n => (n.reps || n.revisions || 0) > 0).length;
+  const due = live.filter(n => noteStatus(n).key === "due").length;
+  $("stat-due").textContent = due;
+  const badge = $("review-badge");
+  badge.textContent = due;
+  badge.style.display = due > 0 ? "inline-block" : "none";
   $("search-clear").style.display = query ? "flex" : "none";
 
   const content = $("content");
@@ -482,7 +523,7 @@ function render() {
       freshBarHtml(n) +
       '<div class="card-foot">' +
         '<span class="card-meta">' + ICONS.clock + ' revised ' + timeAgo(n.lastRevised || n.createdAt) +
-          ((n.revisions || 0) > 0 ? " · ×" + n.revisions : "") + '</span>' +
+          ((n.reps || n.revisions || 0) > 0 ? " · ×" + (n.reps || n.revisions) : "") + '</span>' +
         '<button class="revise-btn" onclick="event.stopPropagation();markRevised(\'' + n.id + '\')">' + ICONS.check + ' Revised</button>' +
       '</div>' +
     '</article>'
@@ -499,15 +540,24 @@ function showToast(msg) {
   toastTimer = setTimeout(() => t.classList.remove("show"), 2200);
 }
 
+/* grades: forgot resets the interval ladder, hard repeats it, good climbs it, easy skips a rung */
+function applyGrade(n, grade) {
+  n.reps = (n.reps || n.revisions || 0) + 1;           /* total successful sit-downs with this note */
+  const rungs = { forgot: null, hard: 0, good: 1, easy: 2 };
+  if (grade === "forgot") n.revisions = 0;
+  else n.revisions = Math.min((n.revisions || 0) + rungs[grade], INTERVALS.length - 1);
+  n.lastRevised = Date.now();
+  n.updatedAt = Date.now();
+  persist();
+}
+
 function markRevised(id) {
   const n = notes.find(x => x.id === id);
   if (!n) return;
-  n.lastRevised = Date.now();
-  n.revisions = (n.revisions || 0) + 1;
-  n.updatedAt = Date.now();
-  persist(); render();
+  applyGrade(n, "good");
+  render();
   if (openId === id) openReader(id);
-  showToast("Revision logged");
+  showToast("Revision logged — back in " + intervalFor(n.revisions) + " days");
 }
 
 function deleteNote(id) {
@@ -1052,6 +1102,131 @@ const aiOverlay = $("ai-overlay");
 $("btn-ai").addEventListener("click", () => { renderAiModal(); aiOverlay.classList.add("open"); });
 $("ai-close").addEventListener("click", () => aiOverlay.classList.remove("open"));
 aiOverlay.addEventListener("click", (e) => { if (e.target === e.currentTarget) aiOverlay.classList.remove("open"); });
+
+/* ============================== review mode ============================== */
+const reviewOverlay = $("review-overlay");
+let rvQueue = [], rvIdx = 0, rvRevealed = false, rvStats = null, rvActive = false;
+
+function startReview() {
+  const live = liveNotes();
+  /* due first, then fading — most-overdue on top */
+  rvQueue = live
+    .map(n => ({ n, st: noteStatus(n) }))
+    .filter(x => x.st.ratio >= 0.5)
+    .sort((a, b) => b.st.ratio - a.st.ratio)
+    .map(x => x.n);
+  rvIdx = 0; rvRevealed = false; rvActive = true;
+  rvStats = { forgot: 0, hard: 0, good: 0, easy: 0 };
+  renderReview();
+  reviewOverlay.classList.add("open");
+}
+
+function startReviewAll() {
+  const live = liveNotes();
+  rvQueue = [...live].sort((a, b) => (a.lastRevised || a.createdAt) - (b.lastRevised || b.createdAt));
+  rvIdx = 0; rvRevealed = false; rvActive = true;
+  rvStats = { forgot: 0, hard: 0, good: 0, easy: 0 };
+  renderReview();
+}
+
+function closeReview() {
+  rvActive = false;
+  reviewOverlay.classList.remove("open");
+  render();
+}
+
+function renderReview() {
+  const sheet = $("review-sheet");
+  const total = rvQueue.length;
+
+  if (total === 0) {
+    sheet.innerHTML =
+      '<div class="sheet-head"><h2>Review</h2><button class="icon-btn" onclick="closeReview()">' + ICONS.x + '</button></div>' +
+      '<div class="rv-done">' +
+        '<h3>Nothing due right now 🎉</h3>' +
+        '<p>Your memory is holding. Come back when notes turn amber or red —<br>revising too early is nearly as wasteful as too late.</p>' +
+        (liveNotes().length ? '<button class="btn btn-ghost" onclick="startReviewAll()">Practice everything anyway</button>' : '') +
+      '</div>';
+    return;
+  }
+
+  if (rvIdx >= total) {
+    const done = rvStats.forgot + rvStats.hard + rvStats.good + rvStats.easy;
+    sheet.innerHTML =
+      '<div class="sheet-head"><h2>Session done</h2><button class="icon-btn" onclick="closeReview()">' + ICONS.x + '</button></div>' +
+      '<div class="rv-done">' +
+        '<h3>' + done + ' concept' + (done === 1 ? "" : "s") + ' reviewed ✓</h3>' +
+        '<p>Recalled well: <b>' + (rvStats.good + rvStats.easy) + '</b> &nbsp;·&nbsp; Struggled: <b>' + rvStats.hard + '</b> &nbsp;·&nbsp; Forgot: <b>' + rvStats.forgot + '</b></p>' +
+        (rvStats.forgot > 0
+          ? '<p style="color:#A03E25">The ' + rvStats.forgot + ' you forgot are rescheduled for tomorrow — they\'re your highest-value minutes.</p>'
+          : '<p>Strong session. The intervals just got longer for everything you nailed.</p>') +
+        '<button class="btn btn-primary" onclick="closeReview()">Done</button>' +
+      '</div>';
+    return;
+  }
+
+  const n = rvQueue[rvIdx];
+  const rev = n.revisions || 0;
+  const iv = (r) => intervalFor(Math.min(r, INTERVALS.length - 1));
+  sheet.innerHTML =
+    '<div class="sheet-head"><h2>Review</h2><button class="icon-btn" onclick="closeReview()">' + ICONS.x + '</button></div>' +
+    '<div class="rv-progress">' +
+      '<div class="rv-progress-track"><div class="rv-progress-fill" style="width:' + (rvIdx / total * 100) + '%"></div></div>' +
+      '<span class="rv-progress-label">' + (rvIdx + 1) + ' / ' + total + '</span>' +
+    '</div>' +
+    '<div class="rv-card">' +
+      '<h3 class="rv-title">' + escapeHtml(n.title) + '</h3>' +
+      tagsHtml(n.tags) +
+      '<p class="rv-instruction" id="rv-instruction">Explain it out loud, from memory — definition, how it works, trade-offs, pitfalls. Then reveal.</p>' +
+      '<div class="rv-content" id="rv-content">' + toHtml(n.content) + '</div>' +
+    '</div>' +
+    '<div id="rv-actions">' +
+      '<button class="btn btn-primary" style="width:100%; justify-content:center;" onclick="revealReview()">Reveal answer</button>' +
+    '</div>' +
+    '<p class="rv-keyhint">Space to reveal · then 1 Forgot · 2 Hard · 3 Good · 4 Easy · Esc to exit</p>';
+  rvRevealed = false;
+}
+
+function revealReview() {
+  if (rvRevealed) return;
+  rvRevealed = true;
+  const n = rvQueue[rvIdx];
+  const rev = n.revisions || 0;
+  const iv = (r) => intervalFor(Math.min(Math.max(r, 0), INTERVALS.length - 1));
+  $("rv-content").classList.add("open");
+  $("rv-instruction").textContent = "How did the recall actually go? Be honest — the schedule depends on it.";
+  $("rv-actions").innerHTML =
+    '<div class="rv-grades">' +
+      '<button class="rv-grade forgot" onclick="gradeReview(\'forgot\')"><span class="g-label">Forgot</span><span class="g-sub">again in 1d</span></button>' +
+      '<button class="rv-grade hard" onclick="gradeReview(\'hard\')"><span class="g-label">Hard</span><span class="g-sub">again in ' + iv(rev) + 'd</span></button>' +
+      '<button class="rv-grade good" onclick="gradeReview(\'good\')"><span class="g-label">Good</span><span class="g-sub">back in ' + iv(rev + 1) + 'd</span></button>' +
+      '<button class="rv-grade easy" onclick="gradeReview(\'easy\')"><span class="g-label">Easy</span><span class="g-sub">back in ' + iv(rev + 2) + 'd</span></button>' +
+    '</div>';
+}
+
+function gradeReview(grade) {
+  const n = rvQueue[rvIdx];
+  if (!n) return;
+  applyGrade(n, grade);
+  rvStats[grade]++;
+  rvIdx++;
+  renderReview();
+}
+
+$("btn-review").addEventListener("click", startReview);
+document.querySelector(".stat-card.accent").style.cursor = "pointer";
+document.querySelector(".stat-card.accent").addEventListener("click", startReview);
+reviewOverlay.addEventListener("click", (e) => { if (e.target === e.currentTarget) closeReview(); });
+document.addEventListener("keydown", (e) => {
+  if (!rvActive) return;
+  if (e.key === "Escape") { closeReview(); return; }
+  if (rvIdx >= rvQueue.length) return;
+  if (!rvRevealed && (e.key === " " || e.key === "Enter")) { e.preventDefault(); revealReview(); return; }
+  if (rvRevealed) {
+    const map = { "1": "forgot", "2": "hard", "3": "good", "4": "easy" };
+    if (map[e.key]) gradeReview(map[e.key]);
+  }
+});
 
 /* ============================== go ============================== */
 render();

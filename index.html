@@ -183,6 +183,25 @@ select.sort { border: 1px solid var(--line-input); border-radius: 10px; backgrou
 .cloud-status-line { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--ink); }
 .token-input { width: 100%; border: 1px solid var(--line-input); border-radius: 10px; padding: 12px 15px; font-size: 13.5px; font-family: 'SFMono-Regular', Consolas, monospace; }
 
+/* ---------- AI practice ---------- */
+.ai-controls { display: grid; grid-template-columns: 1fr 1fr auto auto; gap: 10px; align-items: end; }
+@media (max-width: 640px) { .ai-controls { grid-template-columns: 1fr 1fr; } }
+.ai-field { display: flex; flex-direction: column; gap: 5px; }
+.ai-field label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--ink-faint); font-weight: 600; }
+.ai-field select { border: 1px solid var(--line-input); border-radius: 10px; background: #fff; color: var(--ink); padding: 11px 12px; font-size: 14px; font-family: var(--sans); cursor: pointer; }
+.ai-q { border: 1px solid var(--line); border-radius: 10px; background: #fff; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.ai-q-text { font-size: 14.5px; line-height: 1.6; color: var(--ink); font-weight: 600; margin: 0; }
+.ai-q-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ai-answer { display: none; font-size: 13.5px; line-height: 1.7; color: #3A342B; background: #F7F3E9; border: 1px solid #EAE3D6; border-radius: 10px; padding: 4px 16px; }
+.ai-answer.open { display: block; }
+.ai-answer pre { background: #2B2620; color: #F3EDE0; border-radius: 8px; padding: 11px 14px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 12.5px; line-height: 1.55; white-space: pre-wrap; word-break: break-word; }
+.ai-answer code { background: #EFE7D6; border-radius: 4px; padding: 1px 5px; font-family: 'SFMono-Regular', Consolas, monospace; font-size: 12.5px; }
+.ai-answer pre code { background: none; padding: 0; }
+.ai-answer ul, .ai-answer ol { padding-left: 22px; }
+.ai-answer h4 { font-family: var(--serif); font-size: 16px; margin: 12px 0 4px; }
+.spinner { width: 16px; height: 16px; border: 2.5px solid rgba(255,255,255,0.35); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* ---------- toast ---------- */
 .toast {
   position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(20px);
@@ -204,6 +223,7 @@ svg { flex-shrink: 0; }
       <h1 class="hero-title">A home for your important notes</h1>
     </div>
     <div style="display:flex; gap:10px; flex-wrap:wrap;">
+      <button class="btn btn-small" id="btn-ai" title="Generate senior frontend interview questions with AI"><span id="i-sparkles"></span> AI Practice</button>
       <button class="btn btn-small" id="btn-cloud" title="Keep notes synced across all your devices via your private GitHub gist"><span class="cloud-dot" id="cloud-dot"></span><span id="i-cloud"></span> Cloud</button>
       <button class="btn btn-small" id="btn-export" title="Download all notes as a JSON backup file"><span id="i-download"></span> Export</button>
       <button class="btn btn-small" id="btn-import" title="Restore notes from a JSON backup file"><span id="i-upload"></span> Import</button>
@@ -273,6 +293,17 @@ svg { flex-shrink: 0; }
   </div>
 </div>
 
+<!-- AI practice modal -->
+<div class="overlay" id="ai-overlay">
+  <div class="sheet wide">
+    <div class="sheet-head">
+      <h2>AI Practice</h2>
+      <button class="icon-btn" id="ai-close"><span id="i-x5"></span></button>
+    </div>
+    <div id="ai-body"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -304,13 +335,14 @@ const ICONS = {
   undo: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5 5.5 5.5 0 0 1-5.5 5.5H11"/></svg>',
   redo: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 14 5-5-5-5"/><path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5 5.5 5.5 0 0 0 9.5 20H13"/></svg>',
   cloud: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>',
+  sparkles: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>',
 };
 
 /* place static icons */
 const put = (id, name) => { const el = document.getElementById(id); if (el) el.innerHTML = ICONS[name]; };
 put("i-notebook", "notebook"); put("i-plus", "plus"); put("i-search", "search");
-put("i-x1", "x"); put("i-x2", "x"); put("i-x4", "x"); put("i-download", "download"); put("i-upload", "upload");
-put("i-cloud", "cloud");
+put("i-x1", "x"); put("i-x2", "x"); put("i-x4", "x"); put("i-x5", "x"); put("i-download", "download"); put("i-upload", "upload");
+put("i-cloud", "cloud"); put("i-sparkles", "sparkles");
 
 /* ============================== data ============================== */
 const STORAGE_KEY = "recall-notes-v1";
@@ -842,6 +874,184 @@ $("cloud-close").addEventListener("click", () => cloudOverlay.classList.remove("
 cloudOverlay.addEventListener("click", (e) => { if (e.target === e.currentTarget) cloudOverlay.classList.remove("open"); });
 
 window.addEventListener("online", () => { if (ghToken && ghGist) (cloudDirty ? doCloudPush() : cloudSyncNow(false)); });
+
+/* ============================== AI practice (Anthropic API) ============================== */
+const AI_KEY_STORE = "recall-anthropic-key";
+let aiKey = localStorage.getItem(AI_KEY_STORE) || "";
+let aiResults = [];   /* keep last batch so reopening the panel doesn't lose it */
+let aiBusy = false;
+
+const AI_TARGETS = {
+  google:    { label: "Google (SDE-2)", flavor: "Lean into web platform fundamentals, JavaScript internals, complexity trade-offs, accessibility, and scalable component architecture — the Google bar." },
+  razorpay:  { label: "Razorpay (Senior FE)", flavor: "Lean into payments-grade frontend: checkout and form UX, validation, security (XSS, CSP, iframes, clickjacking), embeddable SDK/widget design, reliability, and performance on low-end Indian devices — the Razorpay bar." },
+  jiohotstar:{ label: "JioHotstar (Senior FE)", flavor: "Lean into large-scale streaming frontend: video players, adaptive bitrate, live events with tens of millions of concurrent viewers, CDN strategy, React performance at scale, and graceful degradation — the JioHotstar bar." },
+  faang:     { label: "FAANG (general senior)", flavor: "General big-tech senior frontend bar: depth over trivia, real trade-off discussions, production war-story territory." },
+};
+const AI_TOPICS = {
+  js:        "JavaScript deep-dive (closures, event loop, prototypes, async, memory)",
+  react:     "React & its internals (reconciliation, hooks, concurrent features, performance)",
+  machine:   "Machine coding round (build a component/widget with edge cases)",
+  system:    "Frontend system design (architecture, state, caching, offline, scale)",
+  perf:      "Web performance (Core Web Vitals, loading, rendering, profiling)",
+  dsa:       "DSA as asked in frontend loops (arrays, strings, trees, practical complexity)",
+  css:       "CSS, layout & rendering (flex/grid, stacking, containment, responsive systems)",
+  behavioral:"Behavioral & leadership for senior level (conflict, ownership, influence)",
+};
+
+function renderAiModal() {
+  const body = $("ai-body");
+  if (!aiKey) {
+    body.innerHTML =
+      '<p class="sync-hint">Generate <b>senior-level frontend interview questions</b> tuned to the company you\'re targeting, then save them straight into your revision cycle. It runs on your own Anthropic API key:</p>' +
+      '<ol class="cloud-steps">' +
+        '<li>Go to <a href="https://console.anthropic.com" target="_blank" rel="noopener">console.anthropic.com</a> and sign in / sign up.</li>' +
+        '<li>Add a small amount of credit under <b>Billing</b> (API usage is pay-per-use, separate from a claude.ai subscription — each batch of questions costs a few rupees at most).</li>' +
+        '<li>Go to <b>API Keys</b> → Create key → copy it (starts with <code>sk-ant-</code>) and paste below.</li>' +
+      '</ol>' +
+      '<input type="password" class="token-input" id="ai-key-field" placeholder="Paste API key here (sk-ant-…)">' +
+      '<p class="sync-status" id="ai-status"></p>' +
+      '<div class="sheet-foot"><button class="btn btn-primary" id="ai-key-save">Save key</button></div>' +
+      '<p class="sync-fineprint">The key is stored only in this browser. <b>Never put it inside index.html or your public repo</b> — anyone could steal it and spend your credits. Paste it here on each device instead, once.</p>';
+    $("ai-key-save").addEventListener("click", saveAiKey);
+    $("ai-key-field").addEventListener("keydown", (e) => { if (e.key === "Enter") saveAiKey(); });
+  } else {
+    body.innerHTML =
+      '<div class="ai-controls">' +
+        '<div class="ai-field"><label>Target</label><select id="ai-target">' +
+          Object.entries(AI_TARGETS).map(([k, v]) => '<option value="' + k + '">' + v.label + '</option>').join("") +
+        '</select></div>' +
+        '<div class="ai-field"><label>Topic</label><select id="ai-topic">' +
+          Object.entries(AI_TOPICS).map(([k, v]) => '<option value="' + k + '">' + v.split(" (")[0] + '</option>').join("") +
+        '</select></div>' +
+        '<div class="ai-field"><label>Count</label><select id="ai-count">' +
+          [1, 2, 3, 4, 5].map(n => '<option value="' + n + '"' + (n === 3 ? ' selected' : '') + '>' + n + '</option>').join("") +
+        '</select></div>' +
+        '<button class="btn btn-primary" id="ai-generate">Generate</button>' +
+      '</div>' +
+      '<p class="sync-status" id="ai-status"></p>' +
+      '<div id="ai-results" style="display:flex; flex-direction:column; gap:12px;"></div>' +
+      '<p class="sync-fineprint">Questions are generated at real SDE-2/Senior difficulty. Save the good ones — they join your revision cycle like any note. <a href="#" id="ai-key-reset">Change API key</a></p>';
+    $("ai-generate").addEventListener("click", generateQuestions);
+    $("ai-key-reset").addEventListener("click", (e) => {
+      e.preventDefault();
+      aiKey = ""; localStorage.removeItem(AI_KEY_STORE); renderAiModal();
+    });
+    renderAiResults();
+  }
+}
+
+function saveAiKey() {
+  const k = $("ai-key-field").value.trim();
+  if (!k) { $("ai-status").textContent = "Paste your key first."; return; }
+  aiKey = k;
+  localStorage.setItem(AI_KEY_STORE, k);
+  renderAiModal();
+  showToast("API key saved to this browser");
+}
+
+async function generateQuestions() {
+  if (aiBusy) return;
+  const target = AI_TARGETS[$("ai-target").value];
+  const topicKey = $("ai-topic").value;
+  const topic = AI_TOPICS[topicKey];
+  const count = $("ai-count").value;
+  const btn = $("ai-generate");
+  aiBusy = true;
+  btn.innerHTML = '<span class="spinner"></span> Generating…';
+  $("ai-status").textContent = "Asking Claude for " + count + " questions — takes ~15-30 seconds…";
+
+  const prompt =
+    "You are a senior frontend interview coach preparing a candidate for " + target.label + " interviews (SDE-2 / Senior Frontend Engineer level).\n\n" +
+    "Generate exactly " + count + " interview questions on this topic: " + topic + ".\n" +
+    target.flavor + "\n\n" +
+    "Rules:\n" +
+    "- Match the real senior bar: deep, practical questions actually asked in recent loops — not trivia answerable in one line.\n" +
+    "- Prefer scenario framing ('Your checkout page...', 'Your player stalls...') where it fits the topic.\n" +
+    "- For each question, write the model answer a strong candidate would give: key points, trade-offs, common pitfalls, and a short code sketch where relevant.\n\n" +
+    "Return ONLY valid JSON — no markdown fences, no commentary — in exactly this shape:\n" +
+    '[{"question": "...", "answer_html": "<p>...</p>"}]\n' +
+    "answer_html must use only these tags: p, ul, ol, li, strong, em, code, pre, h4.";
+
+  try {
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "x-api-key": aiKey,
+        "anthropic-version": "2023-06-01",
+        "content-type": "application/json",
+        "anthropic-dangerous-direct-browser-access": "true",
+      },
+      body: JSON.stringify({
+        model: "claude-sonnet-4-6",
+        max_tokens: 4096,
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+    const data = await r.json();
+    if (!r.ok) {
+      const msg = data && data.error && data.error.message ? data.error.message : ("HTTP " + r.status);
+      throw Object.assign(new Error(msg), { status: r.status });
+    }
+    let text = (data.content || []).filter(b => b.type === "text").map(b => b.text).join("\n");
+    text = text.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(text);
+    if (!Array.isArray(parsed) || !parsed.length) throw new Error("Empty result");
+    aiResults = parsed.map(q => ({ ...q, meta: { targetKey: $("ai-target").value, topicKey } }));
+    $("ai-status").textContent = "";
+    renderAiResults();
+  } catch (e) {
+    $("ai-status").textContent =
+      e.status === 401 ? "Key rejected — check it was copied fully, or create a new one at console.anthropic.com." :
+      e.status === 429 ? "Rate limited — wait a moment and try again." :
+      e.status === 400 && /credit/i.test(e.message) ? "Your Anthropic account needs credits — add some under Billing at console.anthropic.com." :
+      "Generation failed: " + e.message;
+  } finally {
+    aiBusy = false;
+    btn.innerHTML = "Generate";
+  }
+}
+
+function renderAiResults() {
+  const box = $("ai-results");
+  if (!box) return;
+  box.innerHTML = aiResults.map((q, i) =>
+    '<div class="ai-q">' +
+      '<p class="ai-q-text">Q' + (i + 1) + '. ' + escapeHtml(q.question) + '</p>' +
+      '<div class="ai-answer" id="ai-ans-' + i + '">' + (q.answer_html || "") + '</div>' +
+      '<div class="ai-q-actions">' +
+        '<button class="btn btn-ghost" onclick="toggleAiAnswer(' + i + ', this)">Show answer</button>' +
+        '<button class="btn btn-ghost" id="ai-save-' + i + '" onclick="saveAiQuestion(' + i + ')">＋ Save to notes</button>' +
+      '</div>' +
+    '</div>'
+  ).join("");
+}
+
+function toggleAiAnswer(i, btn) {
+  const el = $("ai-ans-" + i);
+  el.classList.toggle("open");
+  btn.textContent = el.classList.contains("open") ? "Hide answer" : "Show answer";
+}
+
+function saveAiQuestion(i) {
+  const q = aiResults[i];
+  if (!q) return;
+  const now = Date.now();
+  const title = q.question.length > 90 ? q.question.slice(0, 87) + "…" : q.question;
+  const content =
+    "<h3>Question</h3><p>" + escapeHtml(q.question) + "</p>" +
+    "<h3>Model answer</h3>" + (q.answer_html || "");
+  const tags = q.meta.topicKey + ", " + q.meta.targetKey + ", interview";
+  notes.unshift({ id: uid(), title, content, tags, createdAt: now, lastRevised: now, updatedAt: now, revisions: 0 });
+  persist(); render();
+  const btn = $("ai-save-" + i);
+  if (btn) { btn.textContent = "✓ Saved"; btn.disabled = true; }
+  showToast("Saved — it's in your revision cycle now");
+}
+
+const aiOverlay = $("ai-overlay");
+$("btn-ai").addEventListener("click", () => { renderAiModal(); aiOverlay.classList.add("open"); });
+$("ai-close").addEventListener("click", () => aiOverlay.classList.remove("open"));
+aiOverlay.addEventListener("click", (e) => { if (e.target === e.currentTarget) aiOverlay.classList.remove("open"); });
 
 /* ============================== go ============================== */
 render();
